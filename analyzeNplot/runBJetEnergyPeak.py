@@ -20,15 +20,14 @@ def runBJetEnergyPeak(inFileURL, outFileURL, xsec=None):
         'bjetenls':ROOT.TH1F('bjetenls',';log(E);  1/E dN_{b jets}/dlog(E)',20,3.,7.),
         'nvtx'  :ROOT.TH1F('nvtx',';Vertex multiplicity; Events',30,0,30),
         'nbtags':ROOT.TH1F('nbtags',';b-tag multiplicity; Events',5,0,5),
-        
-        #Add new histogram for number of jets
-        #'njets':ROOT.TH1F('???','???',???,???,???),
-        
-        #Add new histogram for electron pt
-
-        #Add new histogram for muon pt
+        #added
+        'njets':ROOT.TH1F('njets', ';Number; Jets', 10,0,10),
+        'e_pt':ROOT.TH1F('e_pt', ';Electron P_t (GeV); Electron Number', 40,0,400),
+        'mu_pt':ROOT.TH1F('mu_pt',';Muon P_t (GeV); Muon Number', 40,0.,400)
 
         }
+
+
     for key in histos:
         histos[key].Sumw2()
         histos[key].SetDirectory(0)
@@ -44,6 +43,7 @@ def runBJetEnergyPeak(inFileURL, outFileURL, xsec=None):
         #require at least two jets
         nJets, nBtags, nLeptons = 0, 0, 0
         taggedJetsP4=[]
+        leptonsP4=[]
         for ij in xrange(0,tree.nJet):
 
             #get the kinematics and select the jet
@@ -71,6 +71,7 @@ def runBJetEnergyPeak(inFileURL, outFileURL, xsec=None):
 
             #count selected leptons                    
             nLeptons +=1
+            leptonsP4.append(lp4)
 
         if nLeptons<2 : continue
 
@@ -81,13 +82,21 @@ def runBJetEnergyPeak(inFileURL, outFileURL, xsec=None):
 
         #ready to fill the histograms
         #fill nvtx plot
-        #histos['nvtx'].Fill(???,???)
+        histos['nvtx'].Fill(tree.nPV, evWgt)
         
         #fill nbtag plot
-        #histos['nbtags'].Fill(???,???)
+        histos['nbtags'].Fill(nBtags, evWgt)
 
         #fill electron and muon plots
-        #
+        for i in xrange(0,len(leptonsP4)):
+            #print(leptonsP4[i].Pt())
+            if i>1: break
+            if abs(tree.Lepton_id[i])==11:
+                histos['e_pt'].Fill(leptonsP4[i].Pt())
+                #print(leptonsP4[i].Pt())
+            if abs(tree.Lepton_id[i])==13:
+                histos['mu_pt'].Fill(leptonsP4[i].Pt())
+                #print(leptonsP4[i].Pt())
 
         #use up to two leading b-tagged jets
         for ij in xrange(0,len(taggedJetsP4)):
@@ -145,7 +154,7 @@ def main():
     #create the analysis jobs
     taskList = []
     for sample, sampleInfo in samplesList: 
-        inFileURL  = 'root://cmseos.fnal.gov//%s/%s.root' % (opt.inDir,sample)
+        inFileURL = 'root://cmseos.fnal.gov//%s/%s.root' % (opt.inDir,sample)
         #if not os.path.isfile(inFileURL): continue
         xsec=sampleInfo[0] if sampleInfo[1]==0 else None        
         outFileURL = '%s/%s.root' % (opt.outDir,sample)

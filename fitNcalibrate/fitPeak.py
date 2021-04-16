@@ -12,15 +12,15 @@ def gPeak(h=None,inDir=None,isData=None,lumi=None):
     gStyle.SetOptTitle(0)
     gStyle.SetTickLength(0.03)
 
-    # Get the log(E) histogram 
+    # Get the (E) histogram 
     hFit = h.Clone()
     hFit.SetMarkerStyle(8)
     hFit.GetYaxis().SetTitleSize(0.062)
     hFit.GetYaxis().SetLabelSize(0.062)
     hFit.GetYaxis().SetTitleOffset(0.62)
-    hFit.GetYaxis().SetTitle("1/E dN_{b jets}/dlog(E)")
+    hFit.GetYaxis().SetTitle("1/E dN_{b jets}/d(E)")
     hFit.GetXaxis().SetLabelOffset(1)
-    hFit.GetXaxis().SetTitle("log(E)")
+    hFit.GetXaxis().SetTitle("E")
     hFit.SetLineColor(kBlack)
     hFit.SetMarkerColor(kBlack)
 
@@ -84,7 +84,7 @@ def gPeak(h=None,inDir=None,isData=None,lumi=None):
     hPull.GetXaxis().SetTitleSize(0.160)
     hPull.GetXaxis().SetLabelSize(0.150)
     hPull.GetXaxis().SetTitleOffset(0.8)
-    hPull.GetXaxis().SetTitle("log(E)")
+    hPull.GetXaxis().SetTitle("E")
     hPull.SetLineColor(kBlack)
     hPull.SetMarkerColor(kBlack)
 
@@ -198,17 +198,17 @@ def main():
            res = ROOT.TFile(fiName, "read")
 
            #Get the histogram 
-           hName = "bjetenls/"   
+           hName = "bjeten/"   
            if opt.isData is True:
-               hName = hName + "bjetenls"
+               hName = hName + "bjeten"
            else:
-               hName = hName + "bjetenls_" + samplesList[0]
+               hName = hName + "bjeten_" + samplesList[0]
            histo = res.Get(str(hName))
            histo.SetDirectory(0)
            if opt.isData is not True:
                for sampleInfo in samplesList:
                    if sampleInfo is not samplesList[0]: 
-                       histo.Add(res.Get(str("bjetenls/bjetenls_"+sampleInfo)).Clone());
+                       histo.Add(res.Get(str("bjeten/bjeten_"+sampleInfo)).Clone());
 
            # Create the output directory
            if not os.path.isdir(opt.inDir):

@@ -87,15 +87,19 @@ def runBJetEnergyPeak(inFileURL, outFileURL, xsec=None):
         #fill nbtag plot
         histos['nbtags'].Fill(nBtags, evWgt)
 
+        #fill njets plot
+        histos['njets'].Fill(nJets, evWgt)
+
+
         #fill electron and muon plots
         for i in xrange(0,len(leptonsP4)):
             #print(leptonsP4[i].Pt())
             if i>1: break
             if abs(tree.Lepton_id[i])==11:
-                histos['e_pt'].Fill(leptonsP4[i].Pt())
+                histos['e_pt'].Fill(leptonsP4[i].Pt(), evWgt)
                 #print(leptonsP4[i].Pt())
             if abs(tree.Lepton_id[i])==13:
-                histos['mu_pt'].Fill(leptonsP4[i].Pt())
+                histos['mu_pt'].Fill(leptonsP4[i].Pt(), evWgt)
                 #print(leptonsP4[i].Pt())
 
         #use up to two leading b-tagged jets

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import math, ROOT, json, optparse, os, sys, pprint
 from ROOT import *
+import tdrstyle
 
 def myFitFunc(x=None,par=None):
     return par[0]*TMath.Gaus(x[0],par[1],par[2],kFALSE)
@@ -12,15 +13,15 @@ def gPeak(h=None,inDir=None,isData=None,lumi=None):
     gStyle.SetOptTitle(0)
     gStyle.SetTickLength(0.03)
 
-    # Get the (E) histogram 
+    # Get the log(E) histogram 
     hFit = h.Clone()
     hFit.SetMarkerStyle(8)
     hFit.GetYaxis().SetTitleSize(0.062)
     hFit.GetYaxis().SetLabelSize(0.062)
     hFit.GetYaxis().SetTitleOffset(0.62)
-    hFit.GetYaxis().SetTitle("1/E dN_{b jets}/d(E)")
+    hFit.GetYaxis().SetTitle("1/E dN_{b jets}/dlog(E)")
     hFit.GetXaxis().SetLabelOffset(1)
-    hFit.GetXaxis().SetTitle("E")
+    hFit.GetXaxis().SetTitle("log(E)")
     hFit.SetLineColor(kBlack)
     hFit.SetMarkerColor(kBlack)
 
@@ -84,7 +85,7 @@ def gPeak(h=None,inDir=None,isData=None,lumi=None):
     hPull.GetXaxis().SetTitleSize(0.160)
     hPull.GetXaxis().SetLabelSize(0.150)
     hPull.GetXaxis().SetTitleOffset(0.8)
-    hPull.GetXaxis().SetTitle("E")
+    hPull.GetXaxis().SetTitle("log(E)")
     hPull.SetLineColor(kBlack)
     hPull.SetMarkerColor(kBlack)
 
@@ -169,6 +170,43 @@ def gPeak(h=None,inDir=None,isData=None,lumi=None):
     #all done here ;)
     return Ereco,Err
 
+def plotter(h=None,name=None):
+    c1 = TCanvas("c1","")
+    c1.cd()
+    tdrstyle.setTDRStyle()
+    gROOT.ForceStyle()
+    gROOT.Reset()
+    h.UseCurrentStyle()
+    h.Fit("gaus")
+    h.Draw()
+
+    label1 = TLatex()
+    label1.SetNDC()
+    label1.SetTextFont(60)
+    label1.SetTextSize(0.07)
+    label1.SetTextAlign(31)
+    label1.DrawLatex(0.32, 0.92, "CMS DAS")
+    label2 = TLatex()
+    label2.SetNDC()
+    label2.SetTextFont(42)
+    label2.SetTextSize(0.06)
+    label2.SetTextAlign(11)
+    label2.DrawLatex(0.33, 0.92, "#it{Simulation}")
+
+    c1.Update()
+    stats = c1.GetPrimitive("stats")
+    stats.__class__ = ROOT.TPaveStats
+    stats.SetY1NDC(0.6)
+    stats.SetY2NDC(0.9)
+    stats.SetX1NDC(0.6)
+    stats.SetX2NDC(0.9)
+    c1.RedrawAxis()
+    c1.Update()
+
+    c1.SaveAs(name)
+    c1.Close()
+
+
 def main():
 
            usage = 'usage: %prog [options]'
@@ -198,17 +236,17 @@ def main():
            res = ROOT.TFile(fiName, "read")
 
            #Get the histogram 
-           hName = "bjeten/"   
+           hName = "bjetenls/"   
            if opt.isData is True:
-               hName = hName + "bjeten"
+               hName = hName + "bjetenls"
            else:
-               hName = hName + "bjeten_" + samplesList[0]
+               hName = hName + "bjetenls_" + samplesList[0]
            histo = res.Get(str(hName))
            histo.SetDirectory(0)
            if opt.isData is not True:
                for sampleInfo in samplesList:
                    if sampleInfo is not samplesList[0]: 
-                       histo.Add(res.Get(str("bjeten/bjeten_"+sampleInfo)).Clone());
+                       histo.Add(res.Get(str("bjetenls/bjetenls_"+sampleInfo)).Clone());
 
            # Create the output directory
            if not os.path.isdir(opt.inDir):
@@ -218,9 +256,23 @@ def main():
            Eb,DEb = gPeak(h=histo,inDir=opt.inDir,isData=opt.isData,lumi=opt.lumi)
            print "<E_{b}> = (%3.2f #pm %3.2f) GeV" % (Eb,DEb)
 
+           # pseudo experiments
+           Nexp = 1000
+           pred_peak = 67.57
+           h_peak = TH1F("h_peak", "", 40,62,72)
+           peak_sum = 0
+
+           for i in range(0, Nexp):
+               x = gRandom.Poisson(pred_peak)
+               peak_sum = peak_sum + x
+               h_peak.Fill(x)
+
+           mean = float(peak_sum) / Nexp
+           print("The mean is %f" %(mean))
+           plotter(h_peak, "peak.pdf")
+
+           
            res.Close()
                
 if __name__ == "__main__":
     sys.exit(main())
-
-
